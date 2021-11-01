@@ -1,0 +1,3 @@
+gcc
+-Iinclude
+-O2
