@@ -15,6 +15,7 @@ $(EXEC): deps
 	gcc $(OBJECTS) -o $(EXEC)
 
 deps:
+	mkdir -p build/{vm,visitors,debug}
 	$(MAKE) -C src/debug
 	$(MAKE) -C src/visitors
 	$(MAKE) -C src/vm
