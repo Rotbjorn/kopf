@@ -6,7 +6,7 @@ struct TimeResult {
     uint64_t elapsed;
 };
 
-struct TimeResult results[32];
+struct TimeResult results[1024];
 static size_t results_size = 0;
 
 static uint64_t get_nanoseconds(struct timespec *tm) {

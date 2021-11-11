@@ -1,52 +1,49 @@
 #include "vm/value.h"
+#include "debug/color.h"
 
-
-const char* valuetype_to_string(ValueType type) {
+const char *valuetype_to_string(ValueType type) {
 #define __VALUE(value) \
-    case value:     \
+    case value:        \
         return #value;
-    switch(type) {
-ENUMERATE_VALUES(__VALUE)
+    switch (type) {
+        ENUMERATE_VALUES(__VALUE)
     }
 #undef __VALUE
 }
 
-
 Value boolean_value(uint8_t value) {
-    return (Value) {
+    return (Value){
         .type = VAL_BOOLEAN,
-        .as.boolean = value
-    }; 
+        .as.boolean = value};
 }
 Value integer_value(int value) {
-    return (Value) {
+    return (Value){
         .type = VAL_INTEGER,
-        .as.integer = value
-    }; 
+        .as.integer = value};
 }
 Value decimal_value(double value) {
-    return (Value) {
+    return (Value){
         .type = VAL_DECIMAL,
-        .as.decimal = value
-    }; 
+        .as.decimal = value};
 }
 
-int8_t is_boolean(const Value* value) {
+int8_t is_boolean(const Value *value) {
     return value->type == VAL_BOOLEAN;
 }
 
-int8_t is_integer(const Value* value) {
+int8_t is_integer(const Value *value) {
     return value->type == VAL_INTEGER;
 }
 
-int8_t is_decimal(const Value* value) {
+int8_t is_decimal(const Value *value) {
     return value->type == VAL_DECIMAL;
 }
 
-int8_t value_compare(const Value* v1, const Value* v2) {
-    if (v1->type != v2->type) return 0;
+int8_t value_compare(const Value *v1, const Value *v2) {
+    if (v1->type != v2->type)
+        return 0;
 
-    switch(v1->type) {
+    switch (v1->type) {
         case VAL_STRING:
             printf("TODO: STRING COMPARE SUPPORT\n");
             exit(-69);
@@ -60,20 +57,28 @@ int8_t value_compare(const Value* v1, const Value* v2) {
     return false;
 }
 
-void value_dump(const Value* value) {
-    printf("Value(type='%s', value='", valuetype_to_string(value->type));
-    switch(value->type) {
+void value_dump(const Value *value) {
+    printf(
+        WHITE BOLD "Value" RESET
+        GRAY "(" RESET
+        DARK_GRAY "type=" RESET
+        "'%s'"
+        GRAY ", " RESET
+        DARK_GRAY "value=" RESET
+        "'", valuetype_to_string(value->type));
+    switch (value->type) {
         case VAL_STRING:
             printf("STRING value_dump() not yet done)')");
             break;
         case VAL_BOOLEAN:
-            printf("%s')", (value->as.boolean >= 1 ? "true" : "false"));
+            printf("%s'", (value->as.boolean >= 1 ? "true" : "false"));
             break;
         case VAL_INTEGER:
-            printf("%d')", value->as.integer);
+            printf("%d'", value->as.integer);
             break;
         case VAL_DECIMAL:
-            printf("%f')", value->as.decimal);
+            printf("%f'", value->as.decimal);
             break;
     }
+    printf(GRAY ")" RESET);
 }

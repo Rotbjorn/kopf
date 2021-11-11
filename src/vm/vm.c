@@ -1,82 +1,88 @@
 #include "vm/vm.h"
+#include "debug/timer.h"
 #include "pch.h"
 #include "vm/op.h"
-#include "debug/timer.h"
+#include "skrivarn.h"
 
 static void execute_instruction(VM *vm);
 static uint8_t fetch(VM *vm);
 
 void vm_execute(VM *vm) {
-    TIMER_START();
     vm->ip = vm->bytecode;
     vm->stack.stack_pointer = vm->stack.values;
     while (true) {
         uint8_t current_instruction = *vm->ip;
-        if(current_instruction == OP_EXIT)
+        if (current_instruction == OP_EXIT)
             break;
         execute_instruction(vm);
-        //stack_dump(&vm->stack);
+        // stack_dump(&vm->stack);
     }
-    TIMER_END();
 }
 
 static void execute_instruction(VM *vm) {
-    switch (fetch(vm)) {
+    Opcode instruction = fetch(vm);
+    skrivarn_logf("%s", opcode_to_string(instruction));
+    switch (instruction) {
         case OP_CONST: {
-            printf("OP_CONST");
             size_t index = fetch(vm);
-            printf(" %ld\n", index);
             stack_push(&vm->stack, vm->constants[index]);
             break;
         }
-        case OP_ADD: {
-            printf("OP_ADD\n");
+        case OP_INT_ADD: {
             Value first = stack_pop(&vm->stack);
             Value second = stack_pop(&vm->stack);
-
-            if(first.type == second.type) {
-                // TODO: fix hardcoded integer cast
-                stack_push(&vm->stack, integer_value(first.as.integer + second.as.integer));
-            }
+            stack_push(&vm->stack, integer_value(first.as.integer + second.as.integer));
             break;
         }
-        case OP_SUB: {
-            printf("OP_SUB\n");
+        case OP_INT_SUB: {
             Value first = stack_pop(&vm->stack);
             Value second = stack_pop(&vm->stack);
 
-            if(first.type == second.type) {
-                // TODO: fix hardcoded integer cast
-                stack_push(&vm->stack, integer_value(first.as.integer - second.as.integer));
-            }
+            stack_push(&vm->stack, integer_value(first.as.integer - second.as.integer));
             break;
         }
-        case OP_MUL: {
-            printf("OP_MUL\n");
+        case OP_INT_MUL: {
             Value first = stack_pop(&vm->stack);
             Value second = stack_pop(&vm->stack);
 
-            if(first.type == second.type) {
-                // TODO: fix hardcoded integer cast
-                stack_push(&vm->stack, integer_value(first.as.integer * second.as.integer));
-            }
+            stack_push(&vm->stack, integer_value(first.as.integer * second.as.integer));
             break;
         }
-        case OP_DIV: {
-            printf("OP_DIV\n");
+        case OP_INT_DIV: {
+            Value first = stack_pop(&vm->stack);
+            Value second = stack_pop(&vm->stack);
+            stack_push(&vm->stack, integer_value(first.as.integer / second.as.integer));
+            break;
+        }
+        case OP_DEC_ADD: {
+            Value first = stack_pop(&vm->stack);
+            Value second = stack_pop(&vm->stack);
+            stack_push(&vm->stack, decimal_value(first.as.decimal + second.as.decimal));
+            break;
+        }
+        case OP_DEC_SUB: {
             Value first = stack_pop(&vm->stack);
             Value second = stack_pop(&vm->stack);
 
-            if(first.type == second.type) {
-                // TODO: fix hardcoded integer cast
-                stack_push(&vm->stack, integer_value(first.as.integer / second.as.integer));
-            }
+            stack_push(&vm->stack, decimal_value(first.as.decimal - second.as.decimal));
+            break;
+        }
+        case OP_DEC_MUL: {
+            Value first = stack_pop(&vm->stack);
+            Value second = stack_pop(&vm->stack);
+
+            stack_push(&vm->stack, decimal_value(first.as.decimal * second.as.decimal));
+            break;
+        }
+        case OP_DEC_DIV: {
+            Value first = stack_pop(&vm->stack);
+            Value second = stack_pop(&vm->stack);
+            stack_push(&vm->stack, decimal_value(first.as.decimal / second.as.decimal));
             break;
         }
         case OP_NEGATE: {
-            printf("OP_NEGATE\n");
             Value value = stack_pop(&vm->stack);
-            value.as.integer = - value.as.integer;
+            value.as.integer = -value.as.integer;
             stack_push(&vm->stack, value);
         }
     }

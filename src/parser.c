@@ -28,6 +28,7 @@ static PrefixFunc parser_prefix(Parser *parser);
 static InfixFunc parser_infix(Parser *parser);
 
 static AST *parser_integer(Parser *parser);
+static AST *parser_decimal(Parser *parser);
 static AST *parser_string(Parser *parser);
 
 static AST *parser_unary(Parser *parser);
@@ -49,7 +50,6 @@ Parser *parser_init(Token *token) {
 }
 
 AST *parser_parse(Parser *parser) {
-    TIMER_START();
     AST **nodes = malloc(sizeof(struct AST *));
     size_t size = 1;
     nodes[0] = parser_declaration(parser);
@@ -60,7 +60,6 @@ AST *parser_parse(Parser *parser) {
     }
     AST *compound = ast_compound(nodes, size);
 
-    TIMER_END();
     return compound;
 }
 
@@ -152,15 +151,14 @@ static PrefixFunc parser_prefix(Parser *parser) {
             return parser_string;
         case TOKEN_LPAREN:
             return parser_grouping;
-            break;
         case TOKEN_INTEGER:
             return parser_integer;
-            break;
+        case TOKEN_DECIMAL:
+            return parser_decimal;
         case TOKEN_MINUS:
             return parser_unary;
         default:
             return NULL;
-            break;
     }
 }
 
@@ -182,8 +180,17 @@ static InfixFunc parser_infix(Parser *parser) {
 static AST *parser_integer(Parser *parser) {
     const char *str_value = token_value_copy(parser->token);
     int value = atoi(str_value);
+    free((void*)str_value);
     parser_eat(parser, TOKEN_INTEGER);
     return ast_integer(value);
+}
+
+static AST *parser_decimal(Parser *parser) {
+    const char *str_value = token_value_copy(parser->token);
+    double value = strtod(str_value, NULL);
+    free((void*)str_value);
+    parser_eat(parser, TOKEN_DECIMAL);
+    return ast_decimal(value);
 }
 
 static AST *parser_string(Parser *parser) {

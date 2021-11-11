@@ -7,7 +7,7 @@
 
 #define TIMER_START() struct Timer *__timer = __timer_start_impl(__FUNCTION__)
 
-#define TIMER_START_NAME(name) struct Timer *__timer_##name = __timer_start_impl(#name);
+#define TIMER_START_NAME(name) struct Timer *__timer_##name = __timer_start_impl(#name)
 
 #define TIMER_END() __timer_stop_impl(&__timer)
 

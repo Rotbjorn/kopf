@@ -22,12 +22,10 @@ Lexer *lexer_init() {
 }
 
 Token *lexer_parse(Lexer *lexer, const char *source) {
-    TIMER_START();
     lexer->begin = source;
     lexer->end = source;
 
     Token *tokens = get_tokens(lexer);
-    TIMER_END();
     return tokens;
 }
 
@@ -152,16 +150,25 @@ static Token get_identifier(Lexer *lexer) {
         type = TOKEN_KW_TYPE;
     else if (memcmp(lexer->begin, "if", 2) == 0)
         type = TOKEN_KW_IF;
-
+    else if (memcmp(lexer->begin, "else", 4) == 0)
+        type = TOKEN_KW_ELSE;
 
     return token_create(type, lexer->begin, length);
 }
 
 static Token get_number(Lexer *lexer) {
+    TokenType type = TOKEN_INTEGER;
     while (is_digit(*lexer->end)) {
         advance(lexer);
+        if(*lexer->end == '.') {
+            type = TOKEN_DECIMAL;
+            advance(lexer);
+            while(is_digit(*lexer->end)) {
+                advance(lexer);
+            }
+        }
     }
-    return token_create(TOKEN_INTEGER, lexer->begin, lexer->end - lexer->begin);
+    return token_create(type, lexer->begin, lexer->end - lexer->begin);
 }
 
 static Token get_string_literal(Lexer *lexer) {

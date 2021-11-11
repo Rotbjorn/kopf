@@ -1,5 +1,5 @@
 #include "vm/stack.h"
-
+#include "debug/color.h"
 
 Stack* stack_init() {
     Stack* stack = malloc(sizeof(Stack));
@@ -22,8 +22,8 @@ Value stack_peek(const Stack* stack, int offset) {
 
 void stack_dump(const Stack* stack) {
     for (int i = 0; i < (stack->stack_pointer - stack->values); i++) {
-        printf("[ ");
+        printf(DARK_GRAY "[ " RESET);
         value_dump(&stack->values[i]);
-        printf(" ]\n");
+        printf(DARK_GRAY " ]\n" RESET);
     }
 }

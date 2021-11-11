@@ -2,7 +2,7 @@
 
 export CFLAGS=-c -O0 -Wall
 export BUILD=$(realpath build)
-export INCLUDE_DIR=$(realpath include)
+export INCLUDE_DIR=-I$(realpath include)
 export SOURCE_DIR=$(realpath src)
 
 EXEC=unnamed
@@ -12,8 +12,10 @@ all: $(EXEC)
 
 $(EXEC): deps
 	echo $(OBJECTS)
-	gcc $(OBJECTS) -o $(EXEC)
-
+	gcc $(OBJECTS) \
+		-o $(EXEC) \
+		-L /usr/local/lib/rotbjorn \
+		-lskrivarn
 deps:
 	mkdir -p build/{vm,visitors,debug}
 	$(MAKE) -C src/debug
