@@ -30,7 +30,7 @@ Token *lexer_parse(Lexer *lexer, const char *source) {
 }
 
 static bool is_ascii_char(char ch) {
-    return (ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z');
+    return  (ch == '_') || (ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z');
 }
 
 static bool is_whitespace(char ch) {
@@ -146,12 +146,18 @@ static Token get_identifier(Lexer *lexer) {
     size_t length = lexer->end - lexer->begin;
     TokenType type = TOKEN_IDENTIFIER;
 
-    if(memcmp(lexer->begin, "int", length) == 0)
-        type = TOKEN_KW_TYPE;
+    if(memcmp(lexer->begin, "int", 3) == 0)
+        type = TOKEN_TYPE_INT;
+    else if (memcmp(lexer->begin, "decimal", 7) == 0)
+        type = TOKEN_TYPE_DECIMAL; 
+    else if (memcmp(lexer->begin, "string", 6) == 0)
+        type = TOKEN_TYPE_STRING; 
     else if (memcmp(lexer->begin, "if", 2) == 0)
         type = TOKEN_KW_IF;
     else if (memcmp(lexer->begin, "else", 4) == 0)
         type = TOKEN_KW_ELSE;
+    else if(memcmp(lexer->begin, "include", 7) == 0)
+        type = TOKEN_KW_INCLUDE;
 
     return token_create(type, lexer->begin, length);
 }

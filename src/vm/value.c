@@ -8,10 +8,22 @@ const char *valuetype_to_string(ValueType type) {
     switch (type) {
         ENUMERATE_VALUES(__VALUE)
     }
+    printf("THIS BOI HERE IS SUS AF: %d\n", type);
+    return "UNKNOWN";
 #undef __VALUE
 }
 
-Value boolean_value(uint8_t value) {
+Value string_value(const char *value) {
+    Value val;
+    val.type = VAL_STRING;
+    int length = strlen(value);
+    val.as.string.length = length;
+    val.as.string.chars = malloc(length);
+    strncpy(val.as.string.chars, value, length);
+    return val;
+}
+
+Value boolean_value(bool value) {
     return (Value){
         .type = VAL_BOOLEAN,
         .as.boolean = value};
@@ -27,15 +39,18 @@ Value decimal_value(double value) {
         .as.decimal = value};
 }
 
-int8_t is_boolean(const Value *value) {
+bool is_string(const Value *value) {
+    return value->type == VAL_STRING;
+}
+bool is_boolean(const Value *value) {
     return value->type == VAL_BOOLEAN;
 }
 
-int8_t is_integer(const Value *value) {
+bool is_integer(const Value *value) {
     return value->type == VAL_INTEGER;
 }
 
-int8_t is_decimal(const Value *value) {
+bool is_decimal(const Value *value) {
     return value->type == VAL_DECIMAL;
 }
 
@@ -57,18 +72,24 @@ int8_t value_compare(const Value *v1, const Value *v2) {
     return false;
 }
 
+Value *value_copy(const Value *value) {
+    Value *val = malloc(sizeof(struct Value));
+    memcpy(val, value, sizeof(struct Value));
+    return val;
+}
+
 void value_dump(const Value *value) {
     printf(
         WHITE BOLD "Value" RESET
-        GRAY "(" RESET
-        DARK_GRAY "type=" RESET
-        "'%s'"
-        GRAY ", " RESET
-        DARK_GRAY "value=" RESET
-        "'", valuetype_to_string(value->type));
+            GRAY "(" RESET
+                DARK_GRAY "type=" RESET
+                   "'%s'" GRAY ", " RESET
+                       DARK_GRAY "value=" RESET
+                   "'",
+        valuetype_to_string(value->type));
     switch (value->type) {
         case VAL_STRING:
-            printf("STRING value_dump() not yet done)')");
+            printf("length: %d')", value->as.string.length);
             break;
         case VAL_BOOLEAN:
             printf("%s'", (value->as.boolean >= 1 ? "true" : "false"));

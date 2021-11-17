@@ -1,6 +1,7 @@
 .PHONY: all clean run deps
+.IGNORE: clean
 
-export CFLAGS=-c -O0 -Wall
+export CFLAGS=-c -O0 -Wall -g
 export BUILD=$(realpath build)
 export INCLUDE_DIR=-I$(realpath include)
 export SOURCE_DIR=$(realpath src)
@@ -11,6 +12,7 @@ OBJECTS=$(wildcard build/*.o build/*/*.o build/*/*/*.o)
 all: $(EXEC)
 
 $(EXEC): deps
+	mkdir -p build
 	echo $(OBJECTS)
 	gcc $(OBJECTS) \
 		-o $(EXEC) \
@@ -27,6 +29,5 @@ run:
 	./$(EXEC)
 
 clean:
-	rm $(BUILD)/*.o
-	rm $(BUILD)/vm/*.o
+	rm -r $(BUILD)/*
 	rm $(EXEC)

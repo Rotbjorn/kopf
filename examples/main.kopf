@@ -1,0 +1,6 @@
+include { "examples/consts.kopf" }
+
+decimal PI = NUMBER / 4.0;
+
+decimal POOP = PI;
+

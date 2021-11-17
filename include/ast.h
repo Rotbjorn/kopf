@@ -1,5 +1,6 @@
 #pragma once
 #include "token.h"
+#include "datatypes.h"
 
 #define ENUMERATE_AST(O) \
     O(AST_NO_OP) \
@@ -16,6 +17,8 @@
     O(AST_INTEGER) \
     O(AST_DECIMAL) \
     O(AST_STRING) \
+    \
+    O(AST_VARIABLE) 
 
 #define __AST(ast) \
     ast, 
@@ -38,7 +41,7 @@ struct AST {
         } compound;
 
         struct {
-            char* type;
+            KopfDataType type;
             char* name;
             AST* value;
         } var_decl;
@@ -69,6 +72,11 @@ struct AST {
         struct {
             char* value;
         } string;
+
+
+        struct {
+            char* name;
+        } variable;
     } as;
 };
 
@@ -79,7 +87,7 @@ AST* ast_no_op();
 
 AST* ast_compound(AST** nodes, size_t size);
 
-AST* ast_var_decl(char* type, char* name, AST* value);
+AST* ast_var_decl(KopfDataType type, char* name, AST* value);
 
 AST* ast_if_statement(AST* condition, AST** nodes, size_t size);
 
@@ -89,3 +97,5 @@ AST* ast_unary_op(AST* operand, TokenType op);
 AST* ast_integer(int value);
 AST* ast_decimal(double value);
 AST* ast_string(char* value);
+
+AST* ast_variable(char* name);

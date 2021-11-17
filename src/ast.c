@@ -59,14 +59,16 @@ void ast_dump(AST *ast) {
             }
             indent--;
             print_indent();
-            printf("]\n)");
+            printf("]");
+            print_indent();
+            printf(")");
             break;
 
         case AST_VARIABLE_DECLARATION:
             printf("VAR_DECLARATION(");
             indent++;
             print_indent();
-            printf("%s,", ast->as.var_decl.type);
+            printf("%d,", ast->as.var_decl.type);
             print_indent();
             printf("%s,", ast->as.var_decl.name);
             print_indent();
@@ -142,6 +144,10 @@ void ast_dump(AST *ast) {
             printf("AST_STRING('%s')", ast->as.string.value);
             break;
 
+        case AST_VARIABLE: {
+            printf("AST_VARIABLE('%s')", ast->as.variable.name);
+            break;
+        }
         default:
             printf("%s ast_dump() not yet formatted!\n", asttype_to_string(ast->type));
             break;
@@ -162,7 +168,7 @@ AST *ast_compound(AST **nodes, size_t size) {
     return ast;
 }
 
-AST *ast_var_decl(char *type, char *name, AST *value) {
+AST *ast_var_decl(KopfDataType type, char *name, AST *value) {
     AST *ast = malloc(sizeof(struct AST));
     ast->type = AST_VARIABLE_DECLARATION;
     ast->as.var_decl.type = type;
@@ -215,5 +221,12 @@ AST *ast_string(char *value) {
     AST *ast = malloc(sizeof(struct AST));
     ast->type = AST_STRING;
     ast->as.string.value = value;
+    return ast;
+}
+
+AST* ast_variable(char* name) {
+    AST *ast = malloc(sizeof(struct AST));
+    ast->type = AST_VARIABLE;
+    ast->as.variable.name = name;
     return ast;
 }

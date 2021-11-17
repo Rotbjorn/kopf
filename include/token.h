@@ -9,7 +9,12 @@
                             \
     O(TOKEN_KW_IF)          \
     O(TOKEN_KW_ELSE)        \
-    O(TOKEN_KW_TYPE)        \
+    \
+    O(TOKEN_KW_INCLUDE) \
+                            \
+    O(TOKEN_TYPE_INT)       \
+    O(TOKEN_TYPE_DECIMAL)   \
+    O(TOKEN_TYPE_STRING)    \
                             \
     O(TOKEN_PLUS)           \
     O(TOKEN_MINUS)          \

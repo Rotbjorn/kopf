@@ -2,7 +2,15 @@
 #include "debug/timer.h"
 #include "pch.h"
 #include "vm/op.h"
-#include "skrivarn.h"
+#include <rotbjorn/skrivarn.h>
+
+
+#define FETCH() fetch(vm)
+
+static bool add_global(const char* key, Value value);
+static bool get_global(const char* key, Value value);
+static bool get_global(const char* key, Value value);
+
 
 static void execute_instruction(VM *vm);
 static uint8_t fetch(VM *vm);
@@ -12,19 +20,21 @@ void vm_execute(VM *vm) {
     vm->stack.stack_pointer = vm->stack.values;
     while (true) {
         uint8_t current_instruction = *vm->ip;
-        if (current_instruction == OP_EXIT)
+        if (current_instruction == OP_EXIT) {
             break;
+        }
         execute_instruction(vm);
-        // stack_dump(&vm->stack);
+        stack_dump(&vm->stack);
     }
 }
 
 static void execute_instruction(VM *vm) {
-    Opcode instruction = fetch(vm);
-    skrivarn_logf("%s", opcode_to_string(instruction));
+    Opcode instruction = FETCH();
+    skrivarn_infof("%s", opcode_to_string(instruction));
+    static_assert(OPCODES_SIZE == 14, "Exhaustive handling in execute_instruction");
     switch (instruction) {
         case OP_CONST: {
-            size_t index = fetch(vm);
+            size_t index = FETCH();
             stack_push(&vm->stack, vm->constants[index]);
             break;
         }
@@ -83,6 +93,18 @@ static void execute_instruction(VM *vm) {
         case OP_NEGATE: {
             Value value = stack_pop(&vm->stack);
             value.as.integer = -value.as.integer;
+            stack_push(&vm->stack, value);
+            break;
+        }
+        case OP_DEFINE_GLOBAL: {
+            size_t index = FETCH();
+            Value value = stack_pop(&vm->stack);
+            vm->globals[index] = value;
+            break;
+        }
+        case OP_GET_GLOBAL: {
+            Value value = vm->globals[FETCH()];
+
             stack_push(&vm->stack, value);
         }
     }

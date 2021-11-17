@@ -1,5 +1,8 @@
 #include "parser.h"
 #include "debug/timer.h"
+#include <rotbjorn/skrivarn.h>
+#include "io.h"
+#include "lexer.h"
 
 typedef enum Precedence {
     PREC_NONE,
@@ -11,10 +14,13 @@ typedef enum Precedence {
 typedef AST *(*PrefixFunc)(Parser *);
 typedef AST *(*InfixFunc)(Parser *);
 
+static AST* parser_parse(Parser* parser);
+
 static AST *parser_declaration(Parser *parser);
 
 // Declarations
 static AST *parser_variable_declaration(Parser *parser);
+static AST *parser_include(Parser *parser);
 
 // Statements
 static AST *parser_statement(Parser *parser);
@@ -31,6 +37,8 @@ static AST *parser_integer(Parser *parser);
 static AST *parser_decimal(Parser *parser);
 static AST *parser_string(Parser *parser);
 
+static AST *parser_variable(Parser *parser);
+
 static AST *parser_unary(Parser *parser);
 
 static AST *parser_addition(Parser *parser);
@@ -41,6 +49,10 @@ static AST *parser_grouping(Parser *parser);
 
 static void parser_eat(Parser *parser, TokenType expected);
 static Precedence token_precedence(TokenType type);
+
+AST *parser_generate_ast(Parser *parser) {
+    return parser_parse(parser);
+}
 
 Parser *parser_init(Token *token) {
     Parser *parser = malloc(sizeof(Parser));
@@ -55,8 +67,11 @@ AST *parser_parse(Parser *parser) {
     nodes[0] = parser_declaration(parser);
 
     while (parser->token->type != END_OF_FILE) {
+        AST* node = parser_declaration(parser);
+        if (node == NULL || node->type == AST_NO_OP) continue;
+
         nodes = realloc(nodes, sizeof(struct AST *) * ++size);
-        nodes[size - 1] = parser_declaration(parser);
+        nodes[size - 1] = node;
     }
     AST *compound = ast_compound(nodes, size);
 
@@ -64,21 +79,76 @@ AST *parser_parse(Parser *parser) {
 }
 
 static AST *parser_declaration(Parser *parser) {
-    if (parser->token->type == TOKEN_KW_TYPE) {
+    if (parser->token->type == TOKEN_TYPE_INT
+            || parser->token->type == TOKEN_TYPE_DECIMAL
+            || parser->token->type == TOKEN_TYPE_STRING) {
         return parser_variable_declaration(parser);
+    } else if (parser->token->type == TOKEN_KW_INCLUDE) {
+        return parser_include(parser);
     }
     return parser_statement(parser);
 }
 
 static AST *parser_variable_declaration(Parser *parser) {
-    char *type = token_value_copy(parser->token);
-    parser_eat(parser, TOKEN_KW_TYPE);
+    TokenType type = parser->token->type;
+    parser_eat(parser, type);
     char *name = token_value_copy(parser->token);
     parser_eat(parser, TOKEN_IDENTIFIER);
     parser_eat(parser, TOKEN_EQ);
     AST *value = parser_expression(parser);
     parser_eat(parser, TOKEN_SEMICOLON);
-    return ast_var_decl(type, name, value);
+
+    KopfDataType data_type;
+    switch(type) {
+        case TOKEN_TYPE_INT:
+            data_type = KOPF_DATA_TYPE_INT;
+            break;
+        case TOKEN_TYPE_DECIMAL:
+            data_type = KOPF_DATA_TYPE_DECIMAL;
+            break;
+        case TOKEN_TYPE_STRING:
+            data_type = KOPF_DATA_TYPE_STRING;
+            break;
+        default:
+            skrivarn_errorf("Type is wrong...: %s", tokentype_to_string(type));
+            break;
+        
+    }
+
+    return ast_var_decl(data_type, name, value);
+}
+
+
+static AST *parser_include(Parser *parser) {
+    parser_eat(parser, TOKEN_KW_INCLUDE);
+    parser_eat(parser, TOKEN_LBRACE);
+
+    skrivarn_error("Here? 1");
+    const char* file_name = token_value_copy(parser->token);
+
+    // TODO: Change this later...
+    parser_eat(parser, TOKEN_STRING);
+
+    Lexer *lexer = lexer_init();
+
+    skrivarn_error("Here? 2");
+    Token* tokens = lexer_parse(lexer, read_file(file_name));
+    
+    skrivarn_error("Here? 3");
+    Token* backup = parser->token;
+
+    parser->token = tokens;
+
+    skrivarn_error("Here? 4");
+    // TODO: cyclic dependencies... keep track of imported files?
+    AST* root = parser_parse(parser);
+
+    parser->token = backup;
+
+    skrivarn_error("Here? 5");
+    parser_eat(parser, TOKEN_RBRACE);
+
+    return root;
 }
 
 static AST *parser_statement(Parser *parser) {
@@ -104,7 +174,7 @@ static AST *parser_if_statement(Parser *parser) {
 
     if (parser->token->type != TOKEN_RBRACE) {
         nodes[size++] = parser_declaration(parser);
-        printf("DON HERE BRO: %s\n", tokentype_to_string(parser->token->type));
+        printf("DONE HERE BRO: %s\n", tokentype_to_string(parser->token->type));
     }
 
     while (parser->token->type != TOKEN_RBRACE) {
@@ -157,6 +227,8 @@ static PrefixFunc parser_prefix(Parser *parser) {
             return parser_decimal;
         case TOKEN_MINUS:
             return parser_unary;
+        case TOKEN_IDENTIFIER:
+            return parser_variable;
         default:
             return NULL;
     }
@@ -199,38 +271,42 @@ static AST *parser_string(Parser *parser) {
     return ast_string(str);
 }
 
+static AST *parser_variable(Parser *parser) {
+    char* name =  token_value_copy(parser->token);
+
+    parser_eat(parser, TOKEN_IDENTIFIER);
+
+    return ast_variable(name);
+}
+
+
 static AST *parser_unary(Parser *parser) {
     parser_eat(parser, TOKEN_MINUS);
     AST *operand = parser_precedence(parser, PREC_UNARY);
-    printf("OP_NEGATE\n");
     return ast_unary_op(operand, TOKEN_MINUS);
 }
 
 static AST *parser_addition(Parser *parser) {
     parser_eat(parser, TOKEN_PLUS);
     AST *right = parser_precedence(parser, PREC_FACTOR);
-    printf("OP_ADD\n");
     return ast_bin_op(NULL, TOKEN_PLUS, right);
 }
 
 static AST *parser_subtraction(Parser *parser) {
     parser_eat(parser, TOKEN_MINUS);
     AST *right = parser_precedence(parser, PREC_FACTOR);
-    printf("OP_SUB\n");
     return ast_bin_op(NULL, TOKEN_MINUS, right);
 }
 
 static AST *parser_multiplication(Parser *parser) {
     parser_eat(parser, TOKEN_ASTERISK);
     AST *right = parser_precedence(parser, PREC_FACTOR + 1);
-    printf("OP_MUL\n");
     return ast_bin_op(NULL, TOKEN_ASTERISK, right);
 }
 
 static AST *parser_division(Parser *parser) {
     parser_eat(parser, TOKEN_SLASH);
     AST *right = parser_precedence(parser, PREC_FACTOR + 1);
-    printf("OP_DIV\n");
     return ast_bin_op(NULL, TOKEN_SLASH, right);
 }
 
