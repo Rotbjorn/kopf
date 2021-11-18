@@ -50,6 +50,7 @@ int main() {
     TIMER_END_NAME(BytecodeVisitor);
 
 
+    skrivarn_warn("Starting VM");
     VM vm;
     TIMER_START_NAME(print_copy_constants);
     for (int i = 0; i < bcv.constants_size; i++) {
@@ -71,6 +72,7 @@ int main() {
     vm.globals = malloc(sizeof(Value) * bcv.global_variables_count);
 
     TIMER_START_NAME(Runtime);
+    skrivarn_warn("Executing bytecode");
     vm_execute(&vm);
     TIMER_END_NAME(Runtime);
 

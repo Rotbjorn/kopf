@@ -10,11 +10,13 @@ typedef struct SymbolTable SymbolTable;
 
 typedef struct {
     Stack stack;
+
+    // TODO: typedef?
     uint8_t* bytecode;
     uint8_t* ip;
 
     Value *globals;
-    SymbolTable *symbols;
+    SymbolTable *frame;
 
     Value constants[64];
 } VM;

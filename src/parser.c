@@ -25,6 +25,7 @@ static AST *parser_include(Parser *parser);
 // Statements
 static AST *parser_statement(Parser *parser);
 static AST *parser_if_statement(Parser *parser);
+static AST *parser_block(Parser *parser);
 
 // Expressions
 static AST *parser_expression(Parser *parser);
@@ -155,6 +156,8 @@ static AST *parser_statement(Parser *parser) {
     switch (parser->token->type) {
         case TOKEN_KW_IF:
             return parser_if_statement(parser);
+        case TOKEN_LBRACE:
+            return parser_block(parser);
         default:
             return parser_expression(parser);
     }
@@ -185,6 +188,26 @@ static AST *parser_if_statement(Parser *parser) {
     parser_eat(parser, TOKEN_RBRACE);
 
     AST *ast = ast_if_statement(condition, nodes, size);
+    return ast;
+}
+
+static AST *parser_block(Parser *parser) {
+    parser_eat(parser, TOKEN_LBRACE);
+
+    AST **nodes = malloc(sizeof(struct AST *));
+    size_t size = 1;
+    nodes[0] = parser_declaration(parser);
+
+    while (parser->token->type != END_OF_FILE && parser->token->type != TOKEN_RBRACE) {
+        AST* node = parser_declaration(parser);
+        if (node == NULL || node->type == AST_NO_OP) continue;
+
+        nodes = realloc(nodes, sizeof(struct AST *) * ++size);
+        nodes[size - 1] = node;
+    }
+    parser_eat(parser, TOKEN_RBRACE);
+
+    AST *ast = ast_block(nodes, size);
     return ast;
 }
 

@@ -60,6 +60,26 @@ void ast_dump(AST *ast) {
             indent--;
             print_indent();
             printf("]");
+            indent--;
+            print_indent();
+            printf(")");
+            break;
+
+        case AST_BLOCK:
+            printf("AST_BLOCK(");
+            indent++;
+            print_indent();
+            printf("[");
+            indent++;
+            for (int i = 0; i < ast->as.compound.size; i++) {
+                print_indent();
+                ast_dump(ast->as.compound.nodes[i]);
+                printf(", ");
+            }
+            indent--;
+            print_indent();
+            printf("]");
+            indent--;
             print_indent();
             printf(")");
             break;
@@ -165,6 +185,14 @@ AST *ast_compound(AST **nodes, size_t size) {
     ast->type = AST_COMPOUND;
     ast->as.compound.nodes = nodes;
     ast->as.compound.size = size;
+    return ast;
+}
+
+AST *ast_block(AST **nodes, size_t size) {
+    AST *ast = malloc(sizeof(struct AST));
+    ast->type = AST_BLOCK;
+    ast->as.block.nodes = nodes;
+    ast->as.block.size = size;
     return ast;
 }
 
