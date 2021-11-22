@@ -88,7 +88,9 @@ struct AST {
 };
 
 const char *asttype_to_string(ASTType);
+void ast_free(AST *ast);
 void ast_dump(AST *ast);
+void ast_dump_dot(AST *ast, const char* file_path);
 
 AST *ast_no_op();
 

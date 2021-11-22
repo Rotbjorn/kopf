@@ -1,4 +1,5 @@
 #include "ast.h"
+#include <rotbjorn/skrivarn.h>
 
 static int indent = 0;
 
@@ -38,6 +39,60 @@ void print_indent() {
     for (int i = 0; i < indent; i++) {
         printf("    ");
     }
+}
+
+void ast_free(AST *ast) {
+    static_assert(AST_SIZE == 11, "Exhaustive handling");
+    skrivarn_infof("Freeing: %s", asttype_to_string(ast->type));
+    switch (ast->type) {
+        case AST_NO_OP:
+            break;
+        case AST_COMPOUND:
+            for (int i = 0; i < ast->as.compound.size; i++) {
+                ast_free(ast->as.compound.nodes[i]);
+            }
+            free((void *)ast->as.compound.nodes);
+            break;
+        case AST_BLOCK:
+            for (int i = 0; i < ast->as.block.size; i++) {
+                ast_free(ast->as.block.nodes[i]);
+            }
+            free((void *)ast->as.block.nodes);
+            break;
+        case AST_VARIABLE_DECLARATION:
+            ast_free(ast->as.var_decl.value);
+            free(ast->as.var_decl.name);
+            break;
+        case AST_IF_STATEMENT:
+            ast_free((void *)ast->as.if_statement.condition);
+            for (int i = 0; i < ast->as.if_statement.size; i++) {
+                ast_free(ast->as.if_statement.nodes[i]);
+            }
+            free((void *)ast->as.if_statement.nodes);
+            break;
+        case AST_UNARY_OP:
+            ast_free(ast->as.unary_op.operand);
+            break;
+        case AST_BIN_OP:
+            ast_free(ast->as.bin_op.left);
+            ast_free(ast->as.bin_op.right);
+            break;
+        case AST_INTEGER:
+            break;
+        case AST_DECIMAL:
+            break;
+        case AST_STRING:
+            free((void *)ast->as.string.value);
+            break;
+        case AST_VARIABLE:
+            free((void *)ast->as.variable.name);
+            break;
+        default:
+            skrivarn_error("unreachable");
+            exit(1);
+            break;
+    }
+    free((void *)ast);
 }
 
 void ast_dump(AST *ast) {
@@ -174,6 +229,105 @@ void ast_dump(AST *ast) {
     }
 }
 
+static int _ast_dump_dot_impl(AST *ast, int *count, FILE *sink) {
+    switch (ast->type) {
+        case AST_COMPOUND: {
+            int start = *count;
+            fprintf(sink, "Node_%d [label = \"COMPOUND\"]\n", *count);
+            (*count)++;
+            for (int i = 0; i < ast->as.compound.size; i++) {
+                AST *node = ast->as.compound.nodes[i];
+                int target = _ast_dump_dot_impl(node, count, sink);
+                fprintf(sink, "Node_%d -> Node_%d\n", start, target);
+            }
+            return start;
+        }
+        case AST_BLOCK: {
+            int start = *count;
+            fprintf(sink, "Node_%d [label = \"BLOCK\"]\n", *count);
+            (*count)++;
+            for (int i = 0; i < ast->as.block.size; i++) {
+                AST *node = ast->as.block.nodes[i];
+                int target = _ast_dump_dot_impl(node, count, sink);
+                fprintf(sink, "Node_%d -> Node_%d\n", start, target);
+            }
+            return start;
+        }
+        case AST_VARIABLE_DECLARATION: {
+
+            int start = *count;
+            fprintf(sink, "Node_%d [label = \"var_decl %s\"]\n", *count, ast->as.var_decl.name);
+            (*count)++;
+            int value = _ast_dump_dot_impl(ast->as.var_decl.value, count, sink);
+            fprintf(sink, "Node_%d -> Node_%d\n", start, value);
+
+            return start;
+        }
+
+        case AST_IF_STATEMENT:
+            fprintf(sink, "Node_%d [label = \"IF_STATEMENT\"]\n", *count);
+            return (*count)++;
+
+        case AST_UNARY_OP:
+            fprintf(sink, "Node_%d [label = \"UNARY_OP\"]\n", *count);
+            return (*count)++;
+
+        case AST_BIN_OP: {
+            int start = *count;
+            fprintf(sink, "Node_%d [label = \"%s\"]\n", *count, tokentype_to_string(ast->as.bin_op.op));
+            (*count)++;
+
+            int lhs = _ast_dump_dot_impl(ast->as.bin_op.left, count, sink);
+            int rhs = _ast_dump_dot_impl(ast->as.bin_op.right, count, sink);
+
+            fprintf(sink, "Node_%d -> { Node_%d Node_%d }\n", start, lhs, rhs);
+
+            return start;
+        }
+
+        case AST_INTEGER:
+            fprintf(sink, "Node_%d [label = \"%d\"]\n", *count, ast->as.integer.value);
+            return (*count)++;
+
+        case AST_DECIMAL:
+            fprintf(sink, "Node_%d [label = \"%lf\"]\n", *count, ast->as.decimal.value);
+            return (*count)++;
+
+        case AST_STRING:
+            fprintf(sink, "Node_%d [label = \"\"%s\"\"]\n", *count, ast->as.string.value);
+            return (*count)++;
+
+        case AST_VARIABLE: {
+            int start = *count;
+            fprintf(sink, "Node_%d [label = \"var: %s\"]\n", *count, ast->as.variable.name);
+            (*count)++;
+            return start;
+        }
+
+        default:
+            skrivarn_error("Unreachable");
+            exit(1);
+    }
+}
+
+void ast_dump_dot(AST *ast, const char *file_path) {
+    int count = 0;
+    FILE *file = fopen(file_path, "w");
+    if (!file) {
+        skrivarn_errorf("Couldn't create %s", file_path);
+        return;
+    }
+
+    fprintf(file, "digraph AST {\n");
+    fprintf(file, "fontname = \"JetBrains Mono\"\n");
+    fprintf(file, "label = \"kopf - Abstract Syntax Tree\"\n");
+    fprintf(file, "node [ shape = square fontname = \"JetBrains Mono\" fontsize=5]");
+    _ast_dump_dot_impl(ast, &count, file);
+    fprintf(file, "}\n");
+
+    fclose(file);
+}
+
 AST *ast_no_op() {
     AST *ast = malloc(sizeof(struct AST));
     ast->type = AST_NO_OP;
@@ -252,7 +406,7 @@ AST *ast_string(char *value) {
     return ast;
 }
 
-AST* ast_variable(char* name) {
+AST *ast_variable(char *name) {
     AST *ast = malloc(sizeof(struct AST));
     ast->type = AST_VARIABLE;
     ast->as.variable.name = name;

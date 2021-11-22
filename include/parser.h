@@ -11,4 +11,6 @@ typedef struct {
 
 
 Parser* parser_init(Token* token);
+void parser_free(Parser **parser);
+
 AST* parser_generate_ast(Parser* parser);

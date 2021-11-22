@@ -8,4 +8,5 @@ typedef struct {
 
 
 Lexer* lexer_init();
-Token* lexer_parse(Lexer* lexer, const char* source);
+void lexer_free(Lexer **lexer);
+Token* lexer_lex(Lexer* lexer, const char* source);

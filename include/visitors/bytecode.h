@@ -34,3 +34,4 @@ void bytecode_op(BytecodeVisitor *, Opcode op);
 size_t bytecode_constant(BytecodeVisitor *, Value value);
 
 SymbolTable *symboltable_init();
+void symboltable_free(SymbolTable **symboltable);

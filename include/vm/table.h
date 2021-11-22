@@ -18,3 +18,5 @@ bool table_set(Table *table, const char *key, void *value);
 void* table_get(Table *table, const char *key);
 bool table_delete(Table *table, const char *key);
 void table_dump(Table *table);
+
+void table_free(Table **table);

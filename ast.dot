@@ -1,0 +1,43 @@
+digraph AST {
+fontname = "JetBrains Mono"
+label = "kopf - Abstract Syntax Tree"
+node [ shape = square fontname = "JetBrains Mono" fontsize=5]Node_0 [label = "COMPOUND"]
+Node_1 [label = "COMPOUND"]
+Node_2 [label = "var_decl NUMBER"]
+Node_3 [label = "12.566368"]
+Node_2 -> Node_3
+Node_1 -> Node_2
+Node_0 -> Node_1
+Node_4 [label = "var_decl PI"]
+Node_5 [label = "TOKEN_SLASH"]
+Node_6 [label = "var: NUMBER"]
+Node_7 [label = "4.000000"]
+Node_5 -> { Node_6 Node_7 }
+Node_4 -> Node_5
+Node_0 -> Node_4
+Node_8 [label = "var_decl POOP"]
+Node_9 [label = "var: PI"]
+Node_8 -> Node_9
+Node_0 -> Node_8
+Node_10 [label = "BLOCK"]
+Node_11 [label = "var_decl DOG"]
+Node_12 [label = "123.456000"]
+Node_11 -> Node_12
+Node_10 -> Node_11
+Node_13 [label = "TOKEN_PLUS"]
+Node_14 [label = "var: DOG"]
+Node_15 [label = "123.000000"]
+Node_13 -> { Node_14 Node_15 }
+Node_10 -> Node_13
+Node_16 [label = "BLOCK"]
+Node_17 [label = "TOKEN_PLUS"]
+Node_18 [label = "var: DOG"]
+Node_19 [label = "TOKEN_SLASH"]
+Node_20 [label = "100.000000"]
+Node_21 [label = "2.000000"]
+Node_19 -> { Node_20 Node_21 }
+Node_17 -> { Node_18 Node_19 }
+Node_16 -> Node_17
+Node_10 -> Node_16
+Node_0 -> Node_10
+}

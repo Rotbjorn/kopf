@@ -44,6 +44,15 @@ SymbolTable *symboltable_init() {
     return symbol_table;
 }
 
+void symboltable_free(SymbolTable **symboltable) {
+    if ((*symboltable)->parent != NULL) {
+        symboltable_free(&(*symboltable)->parent);
+    }
+    table_free(&(*symboltable)->table);
+    free(*symboltable);
+    symboltable = NULL;
+}
+
 size_t lookup(SymbolTable *table, const char *key) {
     size_t *index;
 
@@ -143,6 +152,8 @@ static KopfDataType visit_block(BytecodeVisitor *bc, AST *node) {
 
     // TODO: Free the scope
     bc->table = scope->parent;
+    table_free(&scope->table);
+    free((void*)scope);
     
     skrivarn_error("HERE????");
 

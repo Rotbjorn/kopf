@@ -28,6 +28,10 @@ void vm_execute(VM *vm) {
     }
 }
 
+void vm_free(VM *vm) {
+    free((*vm).globals);
+}
+
 static void execute_instruction(VM *vm) {
     Opcode instruction = FETCH();
     skrivarn_infof("%s", opcode_to_string(instruction));

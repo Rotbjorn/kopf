@@ -34,7 +34,7 @@ static Entry **find_entry(Table *table, const char *key, uint32_t hash) {
 
 Table *table_init() {
     Table *table = malloc(sizeof(struct Table));
-    table->entries = malloc(sizeof(Entry *) * KOPF_TABLE_SIZE);
+    table->entries = (Entry**) malloc(sizeof(Entry *) * KOPF_TABLE_SIZE);
 
     for (int i = 0; i < KOPF_TABLE_SIZE; i++) {
         table->entries[i] = NULL;
@@ -91,6 +91,22 @@ void table_dump(Table *table) {
 
         skrivarn_infof("Entry(key='%s', ptr='%x')", entry->key, entry->value);
     }
+}
+void table_free(Table **table) {
+    for (int i = 0; i < KOPF_TABLE_SIZE; i++) {
+        Entry *entry = (*table)->entries[i]; 
+
+        if (entry != NULL) {
+            skrivarn_warnf("Freed key: %s", entry->key);
+            free(entry->key);
+            free(entry->value);
+            free(entry);
+        }
+    }
+    free((*table)->entries);
+    free(*table);
+
+    table = NULL;
 }
 
 uint32_t kopf_hash_string(const char *key) {

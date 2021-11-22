@@ -6,6 +6,8 @@ export BUILD=$(realpath build)
 export INCLUDE_DIR=-I$(realpath include)
 export SOURCE_DIR=$(realpath src)
 
+DOTS=$(realpath dots)
+
 EXEC=unnamed
 OBJECTS=$(wildcard build/*.o build/*/*.o build/*/*/*.o)
 
@@ -25,8 +27,17 @@ deps:
 	$(MAKE) -C src/vm
 	$(MAKE) -C src
 
-run:
+run: $(EXEC)
 	./$(EXEC)
+
+dot: $(DOTS) ast.dot
+	dot -Tsvg ast.dot -o $(DOTS)/ast.svg 
+	dot -Tpng -Gdpi=300 ast.dot -o $(DOTS)/ast.png 
+
+ast.dot: run
+
+$(DOTS):
+	mkdir -p dots
 
 clean:
 	rm -r $(BUILD)/*

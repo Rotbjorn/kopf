@@ -23,3 +23,4 @@ typedef struct {
 
 
 void vm_execute(VM *vm);
+void vm_free(VM *vm);

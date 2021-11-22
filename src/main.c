@@ -1,14 +1,14 @@
 #include "debug/timer.h"
+#include "io.h"
 #include "lexer.h"
 #include "parser.h"
 #include "token.h"
 #include "visitors/bytecode.h"
-#include "vm/vm.h"
-#include <stdio.h>
-#include <rotbjorn/skrivarn.h>
-#include "vm/table.h"
 #include "vm/op.h"
-#include "io.h"
+#include "vm/table.h"
+#include "vm/vm.h"
+#include <rotbjorn/skrivarn.h>
+#include <stdio.h>
 
 const char *source = 
 "decimal FORTNITE = 12.0;"
@@ -23,8 +23,10 @@ int main() {
     const char* file = read_file("examples/main.kopf");
 
     TIMER_START_NAME(Lexer);
-    Token *tokens = lexer_parse(lexer, file);
+    Token *tokens = lexer_lex(lexer, file);
     TIMER_END_NAME(Lexer);
+
+    lexer_free(&lexer);
 
     Token token;
     size_t i = 0;
@@ -37,13 +39,17 @@ int main() {
     AST *root = parser_generate_ast(parser);
     TIMER_END_NAME(Parser);
 
+    parser_free(&parser);
+    free(tokens);
+
     ast_dump(root);
     printf("\n");
 
-    BytecodeVisitor bcv;
-    bcv.bytecode_size = 0;
-    bcv.constants_size = 0;
-
+    BytecodeVisitor bcv = {
+        .bytecode_size = 0,
+        .constants_size = 0,
+        .global_variables_count = 0
+    };
 
     TIMER_START_NAME(BytecodeVisitor);
     bytecode_parse_ast(&bcv, root);
@@ -51,7 +57,9 @@ int main() {
 
 
     skrivarn_warn("Starting VM");
-    VM vm;
+    VM vm = {
+        .bytecode = bcv.bytecode
+    };
     TIMER_START_NAME(print_copy_constants);
     for (int i = 0; i < bcv.constants_size; i++) {
         vm.constants[i] = bcv.constants[i];
@@ -68,7 +76,6 @@ int main() {
     }
     printf("\n");
 
-    vm.bytecode = bcv.bytecode;
     vm.globals = malloc(sizeof(Value) * bcv.global_variables_count);
 
     TIMER_START_NAME(Runtime);
@@ -89,6 +96,15 @@ int main() {
 
     printf("Timings: \n");
     TIMER_DUMP();
+
+
+    ast_dump_dot(root, "ast.dot");
+
+    ast_free(root);
+    free((void*)file);
+    vm_free(&vm);
+
+    symboltable_free(&bcv.table);
 
     return 0;
 }

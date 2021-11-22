@@ -62,6 +62,10 @@ Parser *parser_init(Token *token) {
     return parser;
 }
 
+void parser_free(Parser **parser) {
+    free(*parser);
+}
+
 AST *parser_parse(Parser *parser) {
     AST **nodes = malloc(sizeof(struct AST *));
     size_t size = 1;
@@ -133,8 +137,11 @@ static AST *parser_include(Parser *parser) {
     Lexer *lexer = lexer_init();
 
     skrivarn_error("Here? 2");
-    Token* tokens = lexer_parse(lexer, read_file(file_name));
+    const char* file = read_file(file_name);
+    Token* tokens = lexer_lex(lexer, file);
     
+    lexer_free(&lexer);
+
     skrivarn_error("Here? 3");
     Token* backup = parser->token;
 
@@ -143,6 +150,10 @@ static AST *parser_include(Parser *parser) {
     skrivarn_error("Here? 4");
     // TODO: cyclic dependencies... keep track of imported files?
     AST* root = parser_parse(parser);
+
+    free((void*)file_name);
+    free(tokens);
+    free((void*)file);
 
     parser->token = backup;
 
