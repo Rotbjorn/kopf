@@ -10,7 +10,7 @@ OBJECTS := $(patsubst %.c, $(BUILD)/%.o, $(SOURCES))
 
 #alls: echoes
 
-all: $(OBJECTS)
+all: echoes $(OBJECTS)
 
 $(OBJECTS): $(BUILD)/%.o: %.c
 	gcc $(CFLAGS) $(INCLUDE_DIR) $< -o $@
